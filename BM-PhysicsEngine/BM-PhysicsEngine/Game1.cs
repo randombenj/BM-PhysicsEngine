@@ -21,12 +21,17 @@ namespace BM_PhysicsEngine
 
         Texture2D satellite;
         Vector2 satellitePosition;
+        Vector2 satelliteAcceleration;
+        Vector2 eartSatPos;
 
         SpriteFont font;
 
         float gEarth = 9.81f;
+
+
+
         Texture2D earth;
-        Vector2 earthPosition = new Vector2(220, 130);
+        Vector2 earthPosition = new Vector2(420, 230);
 
         public Game1()
         {
@@ -71,6 +76,14 @@ namespace BM_PhysicsEngine
             // TODO: Unload any non ContentManager content here
         }
 
+        int count = 0;
+        float relation = 0;
+        double angle = 0;
+        float velAtEarthX = 0;
+        float velAtEarthY = 0;
+        float earthPassTimeX = 0;
+        float earthPassTimeY = 0;
+
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -82,16 +95,51 @@ namespace BM_PhysicsEngine
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            count++;
 
             float secondSinceBeginn = (float)gameTime.TotalGameTime.TotalSeconds;
             // TODO: Add your update logic here
 
-            //arrowsGeschwindigkeit.Y = gEarth * secondSinceBeginn + 0f;
+            eartSatPos = earthPosition - satellitePosition;
 
-            float xErdMitte = earthPosition.X + earth.Height / 2;
-            float yErdMitte = earthPosition.Y + earth.Width / 2;
+            if (angle == 0)
+            {
+                angle = Math.Atan( eartSatPos.X / eartSatPos.Y);
+                satelliteAcceleration.Y = ((float)Math.Cos(angle) * gEarth);
+                satelliteAcceleration.X = ((float)Math.Sin(angle) * gEarth);
+            }
 
-            satellitePosition.Y = ((0.5f * gEarth * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f) * 10f); // Das *10f sagt dass 10px 1m sind.
+            if (eartSatPos.Y > 0)
+            {
+                satellitePosition.Y = (0.5f * satelliteAcceleration.Y * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f); // Das *10f sagt dass 10px 1m sind.     
+            }
+            else
+            {
+                if (velAtEarthY == 0)
+                {
+                    velAtEarthY = satelliteAcceleration.Y * secondSinceBeginn + 0f;
+                    earthPassTimeY = secondSinceBeginn;
+                    satelliteAcceleration.Y *= -1;
+                }
+
+                satellitePosition.Y = (0.5f * satelliteAcceleration.Y * ((secondSinceBeginn - earthPassTimeY) * (secondSinceBeginn - earthPassTimeY)) + velAtEarthY * (secondSinceBeginn - earthPassTimeY) + earthPosition.Y); // Das *10f sagt dass 10px 1m sind.
+            }
+
+            if (eartSatPos.X > 0)
+            {
+                satellitePosition.X = (0.5f * satelliteAcceleration.X * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f); //
+            }
+            else
+            {
+                if (velAtEarthX == 0)
+                {
+                    velAtEarthX = satelliteAcceleration.X * secondSinceBeginn + 0f;
+                    earthPassTimeX = secondSinceBeginn;
+                    satelliteAcceleration.X *= -1;
+                }
+
+                satellitePosition.X = (0.5f * satelliteAcceleration.X * ((secondSinceBeginn - earthPassTimeX) * (secondSinceBeginn - earthPassTimeX)) + velAtEarthX * (secondSinceBeginn - earthPassTimeX) + earthPosition.X); //
+            }
 
             base.Update(gameTime);
         }
@@ -109,8 +157,8 @@ namespace BM_PhysicsEngine
             spriteBatch.Begin();
             spriteBatch.Draw(satellite, satellitePosition, Color.White);
             spriteBatch.Draw(earth, earthPosition, Color.White);
-            spriteBatch.DrawString(font, String.Format("GAMETIME: {3}s\n\nSattelite.Y: {0:0000.00} m\nSattelite.X: {1:0000.00} m\nSattelite.Velocity: {2:0000.00} m/s\n",
-                (satellitePosition.X / 10), (satellitePosition.Y / 10), ((gEarth * (float)gameTime.TotalGameTime.TotalSeconds + 0f)).ToString(), gameTime.TotalGameTime.TotalSeconds),
+            spriteBatch.DrawString(font, String.Format("GAMETIME: {3}s\n\nSatelite.Y: {0:0000.00} m\nSatelite.X: {1:0000.00} m\nSatelite.Velocity: {2:0000.00} m/s\nRelation: {4}\nAbstand X/Y: {5: .0} / {6: .0}\n Acceleration X/Y: {7: .0} / {8: .0}",
+                satellitePosition.X, satellitePosition.Y, ((gEarth * (float)gameTime.TotalGameTime.TotalSeconds + 0f)).ToString(), gameTime.TotalGameTime.TotalSeconds, relation, eartSatPos.X, eartSatPos.Y, satelliteAcceleration.X, satelliteAcceleration.Y),
                 new Vector2(400, 45), Color.White);
             spriteBatch.End();
 
