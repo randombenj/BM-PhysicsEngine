@@ -31,7 +31,7 @@ namespace BM_PhysicsEngine
 
 
         Texture2D earth;
-        Vector2 earthPosition = new Vector2(420, 230);
+        Vector2 earthPosition = new Vector2(250, 150);
 
         public Game1()
         {
@@ -111,6 +111,12 @@ namespace BM_PhysicsEngine
 
             if (eartSatPos.Y > 0)
             {
+                if (velAtEarthY != 0)
+                {
+                    velAtEarthY = 0;
+                    earthPassTimeY = secondSinceBeginn;
+                    satelliteAcceleration.Y *= -1;
+                }
                 satellitePosition.Y = (0.5f * satelliteAcceleration.Y * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f); // Das *10f sagt dass 10px 1m sind.     
             }
             else
@@ -127,13 +133,19 @@ namespace BM_PhysicsEngine
 
             if (eartSatPos.X > 0)
             {
-                satellitePosition.X = (0.5f * satelliteAcceleration.X * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f); //
+                if (velAtEarthX != 0)
+                {
+                    velAtEarthX = 0;
+                    earthPassTimeX = secondSinceBeginn;
+                    satelliteAcceleration.X *= -1;
+                }
+                satellitePosition.X = (0.5f * satelliteAcceleration.X * (secondSinceBeginn * secondSinceBeginn) + 50f * secondSinceBeginn + 0f); //
             }
             else
             {
                 if (velAtEarthX == 0)
                 {
-                    velAtEarthX = satelliteAcceleration.X * secondSinceBeginn + 0f;
+                    velAtEarthX = satelliteAcceleration.X * secondSinceBeginn + 50f;
                     earthPassTimeX = secondSinceBeginn;
                     satelliteAcceleration.X *= -1;
                 }
