@@ -21,6 +21,7 @@ namespace BM_PhysicsEngine
 
         Texture2D satellite;
         Vector2 satellitePosition;
+        Vector2 satelliteVelocity;
         Vector2 satelliteAcceleration;
         Vector2 eartSatPos;
 
@@ -65,6 +66,7 @@ namespace BM_PhysicsEngine
             satellite = Content.Load<Texture2D>(@"images\satellite");
             earth = Content.Load<Texture2D>(@"images\earth");
             font = Content.Load<SpriteFont>("SatInfo");
+            satelliteVelocity.X = 20;
         }
 
         /// <summary>
@@ -76,13 +78,9 @@ namespace BM_PhysicsEngine
             // TODO: Unload any non ContentManager content here
         }
 
-        int count = 0;
         float relation = 0;
         double angle = 0;
-        float velAtEarthX = 0;
-        float velAtEarthY = 0;
-        float earthPassTimeX = 0;
-        float earthPassTimeY = 0;
+        float secondsLastFrame;
 
         /// <summary>
         /// Allows the game to run logic such as updating the world,
@@ -95,9 +93,9 @@ namespace BM_PhysicsEngine
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-            count++;
-
             float secondSinceBeginn = (float)gameTime.TotalGameTime.TotalSeconds;
+            float timeSpanSincLastFrame = secondSinceBeginn - secondsLastFrame;
+            secondsLastFrame = secondSinceBeginn;
             // TODO: Add your update logic here
 
             eartSatPos = earthPosition - satellitePosition;
@@ -109,49 +107,46 @@ namespace BM_PhysicsEngine
                 satelliteAcceleration.X = ((float)Math.Sin(angle) * gEarth);
             }
 
-            if (eartSatPos.Y > 0)
+            #region Change directory of Acceleration
+
+            if (satellitePosition.X > earthPosition.X)
             {
-                if (velAtEarthY != 0)
+                if (satelliteAcceleration.X > 0)
                 {
-                    velAtEarthY = 0;
-                    earthPassTimeY = secondSinceBeginn;
-                    satelliteAcceleration.Y *= -1;
+                    satelliteAcceleration.X *= -1;
                 }
-                satellitePosition.Y = (0.5f * satelliteAcceleration.Y * (secondSinceBeginn * secondSinceBeginn) + 0f * secondSinceBeginn + 0f); // Das *10f sagt dass 10px 1m sind.     
             }
             else
             {
-                if (velAtEarthY == 0)
+                if (satelliteAcceleration.X < 0)
                 {
-                    velAtEarthY = satelliteAcceleration.Y * secondSinceBeginn + 0f;
-                    earthPassTimeY = secondSinceBeginn;
-                    satelliteAcceleration.Y *= -1;
-                }
-
-                satellitePosition.Y = (0.5f * satelliteAcceleration.Y * ((secondSinceBeginn - earthPassTimeY) * (secondSinceBeginn - earthPassTimeY)) + velAtEarthY * (secondSinceBeginn - earthPassTimeY) + earthPosition.Y); // Das *10f sagt dass 10px 1m sind.
-            }
-
-            if (eartSatPos.X > 0)
-            {
-                if (velAtEarthX != 0)
-                {
-                    velAtEarthX = 0;
-                    earthPassTimeX = secondSinceBeginn;
                     satelliteAcceleration.X *= -1;
                 }
-                satellitePosition.X = (0.5f * satelliteAcceleration.X * (secondSinceBeginn * secondSinceBeginn) + 50f * secondSinceBeginn + 0f); //
+            }
+
+
+            if (satellitePosition.Y > earthPosition.Y)
+            {
+                if (satelliteAcceleration.Y > 0)
+                {
+                    satelliteAcceleration.Y *= -1;
+                }
             }
             else
             {
-                if (velAtEarthX == 0)
+                if (satelliteAcceleration.Y < 0)
                 {
-                    velAtEarthX = satelliteAcceleration.X * secondSinceBeginn + 50f;
-                    earthPassTimeX = secondSinceBeginn;
-                    satelliteAcceleration.X *= -1;
+                    satelliteAcceleration.Y *= -1;
                 }
-
-                satellitePosition.X = (0.5f * satelliteAcceleration.X * ((secondSinceBeginn - earthPassTimeX) * (secondSinceBeginn - earthPassTimeX)) + velAtEarthX * (secondSinceBeginn - earthPassTimeX) + earthPosition.X); //
             }
+
+            #endregion
+
+            satelliteVelocity.X = satelliteAcceleration.X * timeSpanSincLastFrame + satelliteVelocity.X;
+            satelliteVelocity.Y = satelliteAcceleration.Y * timeSpanSincLastFrame + satelliteVelocity.Y;
+
+            satellitePosition.Y = (0.5f * satelliteAcceleration.Y * (timeSpanSincLastFrame * timeSpanSincLastFrame) + satelliteVelocity.Y * timeSpanSincLastFrame + satellitePosition.Y);
+            satellitePosition.X = (0.5f * satelliteAcceleration.X * (timeSpanSincLastFrame * timeSpanSincLastFrame) + satelliteVelocity.X * timeSpanSincLastFrame + satellitePosition.X);
 
             base.Update(gameTime);
         }
@@ -169,8 +164,8 @@ namespace BM_PhysicsEngine
             spriteBatch.Begin();
             spriteBatch.Draw(satellite, satellitePosition, Color.White);
             spriteBatch.Draw(earth, earthPosition, Color.White);
-            spriteBatch.DrawString(font, String.Format("GAMETIME: {3}s\n\nSatelite.Y: {0:0000.00} m\nSatelite.X: {1:0000.00} m\nSatelite.Velocity: {2:0000.00} m/s\nRelation: {4}\nAbstand X/Y: {5: .0} / {6: .0}\n Acceleration X/Y: {7: .0} / {8: .0}",
-                satellitePosition.X, satellitePosition.Y, ((gEarth * (float)gameTime.TotalGameTime.TotalSeconds + 0f)).ToString(), gameTime.TotalGameTime.TotalSeconds, relation, eartSatPos.X, eartSatPos.Y, satelliteAcceleration.X, satelliteAcceleration.Y),
+            spriteBatch.DrawString(font, String.Format("GAMETIME: {4}s\n\nSatelite Position X/Y: {0: .00} m / {1: .00} m\nSatelite Velocity X/Y: {2: .00} / {3: .00} m/s\nRelation: {5}\nAbstand X/Y: {6: .0} / {7: .0}\n Acceleration X/Y: {8: .0} / {9: .0}",
+                satellitePosition.X, satellitePosition.Y, satelliteVelocity.X, satelliteVelocity.Y, gameTime.TotalGameTime.TotalSeconds, relation, eartSatPos.X, eartSatPos.Y, satelliteAcceleration.X, satelliteAcceleration.Y),
                 new Vector2(400, 45), Color.White);
             spriteBatch.End();
 
